@@ -60,6 +60,7 @@ int		orders_Long,
 
 // More temp params.
 double 		totalPL,
+		totalSwap,
 		order_minimal,
 		order_maximal;
 
@@ -128,7 +129,8 @@ int start() {
 			"\nSmallest short:" + order_minimal +
 			"\nDelta short:" + shortDelta +
 			"\nTotal short orders:" + orders_Short +
-			"\nTotal profit:" + DoubleToStr(totalPL, 2);
+			"\nTotal profit:" + DoubleToStr(totalPL, 2) +
+			"\nTotal Swap:" + DoubleToStr(totalSwap, 2);
 		Comment (info);
 		//Print (info);
 	}
@@ -140,6 +142,7 @@ int CountOrders() {
 
 	int count = 0;
 	totalPL = 0;
+	totalSwap = 0;
 	orders_Short = 0;
 	orders_Long = 0;
 	order_minimal = 9999.9;
@@ -168,7 +171,7 @@ int CountOrders() {
 			}
 		}
 	}
-	
+	totalSwap = GetCurrentSwap();
 	return( count );
 }
 
@@ -257,6 +260,7 @@ bool Exit(int ticket, int dir, double volume, color clr, int t = 0)  {
 double GetCurrentPL () {
 
 	double currentPL = 0;
+	
 
 	for( int i = 0; i <= OrdersTotal(); i++) {
 
@@ -268,6 +272,22 @@ double GetCurrentPL () {
 	}
 
 	return( currentPL );
+}
+
+double GetCurrentSwap () {
+
+	double currentSwap = 0;
+
+	for( int i = 0; i <= OrdersTotal(); i++) {
+
+		check = OrderSelect( i, SELECT_BY_POS, MODE_TRADES);
+
+		if( OrderSymbol() == Symbol() && OrderMagicNumber() == MagicNumber ) {
+			currentSwap += OrderSwap();
+		}
+	}
+
+	return( currentSwap );
 }
 
 bool CreatePendingOrders(int dir, int pendingType, double entryPrice, double volume, int stop, int take, string comment)  {
