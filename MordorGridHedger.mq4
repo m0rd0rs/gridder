@@ -41,8 +41,8 @@ extern   bool	GrabAndRun		=  true;	// If All open positions profit is bigger tha
 extern   bool	AggresiveHedge		=  true;	// Will hedge the opposite ammount of lots minus the already open lots.
 							// e.g. If you have 6 longs and 1 short, this will open next order x5
 extern   int	MagicNumber		=  4400;	// Pazardjik's postal code in Bulgaria :P
-extern   double	GrabAndRunTarget	=  20; 		// In base account currency. Can be a fraction like 0.3 (e.g. 30 EURO cents)
-extern   double	InitialLots		=  0.1;		// This will be multiplied if necessary
+extern   double	GrabAndRunTarget	=  2; 		// In base account currency. Can be a fraction like 0.3 (e.g. 30 EURO cents)
+extern   double	InitialLots		=  0.01;	// This will be multiplied if necessary
 extern   int	PipsPerStep		=  25;		// This will establish the distance between each step.
 extern   double	DailyTarget		=  100;		// Stop trading if reached. EUR 100 per day is quite good achievement for now.
 
@@ -55,7 +55,11 @@ bool		successfullTrade	=  false;
 bool            check;
 
 // Order count
-int		orders_Long,
+double
+		lots_Long,
+		lots_Short;
+int
+		orders_Long,
 		orders_Short;
 
 // More temp params.
@@ -95,9 +99,11 @@ int start() {
 		longPipDistance = longDelta * 10000;
 		shortPipDistance = shortDelta * 10000;
 		if (longPipDistance > PipsPerStep) {
+			if (AggresiveHedge == true) {lots = lots_Short;}
 			check = CreatePendingOrders(LONG, OP_BUY, Ask, lots, 0, 0, ""); 
 		}
 		if (shortPipDistance > PipsPerStep) {
+			if (AggresiveHedge == true) {lots = lots_Long;}
 			check = CreatePendingOrders(SHORT, OP_SELL, Bid, lots, 0, 0, "");
 		}
 	}
@@ -123,12 +129,13 @@ int start() {
 		string info = 
 			"Broker: " + AccountCompany() +
 			"\nTotal long orders:" + orders_Long +
-			"\nTotal short orders:" + orders_Short +
-			"\nBiggest long:" + order_maximal +
+			"\nLong order lots:" + lots_Long +
+			"\nHighest long:" + order_maximal +
 			"\nDelta long:" + longDelta +
-			"\nSmallest short:" + order_minimal +
-			"\nDelta short:" + shortDelta +
 			"\nTotal short orders:" + orders_Short +
+			"\nShort order lots:" + lots_Short +
+			"\nLowest short:" + order_minimal +
+			"\nDelta short:" + shortDelta +
 			"\nTotal profit:" + DoubleToStr(totalPL, 2) +
 			"\nTotal Swap:" + DoubleToStr(totalSwap, 2);
 		Comment (info);
@@ -145,6 +152,8 @@ int CountOrders() {
 	totalSwap = 0;
 	orders_Short = 0;
 	orders_Long = 0;
+	lots_Long = 0;
+	lots_Short = 0;
 	order_minimal = 9999.9;
 	order_maximal = 0;
   
@@ -159,12 +168,14 @@ int CountOrders() {
 
 			if( OrderType() == OP_BUY ) { 
 				orders_Long++;
+				lots_Long += OrderLots();
 				if (OrderOpenPrice()  > order_maximal) {
 					order_maximal = OrderOpenPrice();
 				}
 			}
 			if( OrderType() == OP_SELL ) {
-				orders_Short++; 
+				orders_Short++;
+				lots_Short += OrderLots();
 				if (OrderOpenPrice()  < order_minimal) {
 					order_minimal = OrderOpenPrice();
 				}
