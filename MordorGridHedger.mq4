@@ -41,9 +41,9 @@ extern   bool	GrabAndRun		=  true;	// If All open positions profit is bigger tha
 extern   bool	AggresiveHedge		=  true;	// Will hedge the opposite ammount of lots minus the already open lots.
 							// e.g. If you have 6 longs and 1 short, this will open next order x5
 extern   int	MagicNumber		=  4400;	// Pazardjik's postal code in Bulgaria :P
-extern   double	GrabAndRunTarget	=  2; 		// In base account currency. Can be a fraction like 0.3 (e.g. 30 EURO cents)
+extern   double	GrabAndRunTarget	=  0.7; 		// In base account currency. Can be a fraction like 0.3 (e.g. 30 EURO cents)
 extern   double	InitialLots		=  0.01;	// This will be multiplied if necessary
-extern   int	PipsPerStep		=  25;		// This will establish the distance between each step.
+extern   int	PipsPerStep		=  7;		// This will establish the distance between each step in PIPs.
 extern   double	DailyTarget		=  100;		// Stop trading if reached. EUR 100 per day is quite good achievement for now.
 
 extern   bool	LogMessages		=  true;
@@ -51,6 +51,7 @@ extern   bool	LogMessages		=  true;
 // Some temp params needed to be globals as well.
 int		Slippage 		=  3;		// 3 is not always acceptable, but will do in stronger trends.
 int		handle;
+int		Normalizator		=  10000;
 bool		successfullTrade	=  false;
 bool            check;
 
@@ -96,8 +97,8 @@ int start() {
 	if( orders_Total > 0) {
 		longDelta = (currentPrice - order_maximal);
 		shortDelta = (order_minimal - currentPrice);
-		longPipDistance = longDelta * 10000;
-		shortPipDistance = shortDelta * 10000;
+		longPipDistance = longDelta * Normalizator;
+		shortPipDistance = shortDelta * Normalizator;
 		if (longPipDistance > PipsPerStep) {
 			if (AggresiveHedge == true) {lots = lots_Short;}
 			check = CreatePendingOrders(LONG, OP_BUY, Ask, lots, 0, 0, ""); 
@@ -108,7 +109,7 @@ int start() {
 		}
 	}
 	
-	// Target reached, close profit and restart or close
+	// Target reached, collect profit and restart or close
 	if( GrabAndRun == true && (GetCurrentPL () >= GrabAndRunTarget )) {
 
 		while (orders_Total > 0) {
