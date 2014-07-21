@@ -38,12 +38,15 @@
 // Globals
 extern   bool	CloseAfterSuccess	=  true;	// Remove the EA from the chart after successfull profit is taken.
 extern   bool	GrabAndRun		=  true;	// If All open positions profit is bigger than GrabAndRunTarget - close all.
-extern   bool	AggresiveHedge		=  true;	// Will hedge the opposite ammount of lots minus the already open lots.
-							// e.g. If you have 6 longs and 1 short, this will open next order x5
+extern   int	AggresiveHedge		=  1;		// Will hedge the opposite ammount of lots minus the already open lots.
+							// Aggresive = 0: Will always use the initial lot size to hedge the opposite positions
+							// Aggresive = 1: If you have 6 longs and 1 short, this will open next short order x5
+							// Aggresive = 2: If you have 6 longs sized total 3 lots and 1 short worth 0.10 lots
+							// this will open next short order the size of 3 lots to cover the longs
 extern   int	MagicNumber		=  4400;	// Pazardjik's postal code in Bulgaria :P
-extern   double	GrabAndRunTarget	=  0.7; 		// In base account currency. Can be a fraction like 0.3 (e.g. 30 EURO cents)
-extern   double	InitialLots		=  0.01;	// This will be multiplied if necessary
-extern   int	PipsPerStep		=  7;		// This will establish the distance between each step in PIPs.
+extern   double	GrabAndRunTarget	=  0.5; 	// In base account currency. Can be a fraction like 0.3 (e.g. 30 EURO cents)
+extern   double	InitialLots		=  0.01;	// This will be multiplied by the aggresive hedging alogrithm if necessary
+extern   int	PipsPerStep		=  12;		// This will establish the distance between each step in PIPs.
 extern   double	DailyTarget		=  100;		// Stop trading if reached. EUR 100 per day is quite good achievement for now.
 
 extern   bool	LogMessages		=  true;
@@ -100,11 +103,13 @@ int start() {
 		longPipDistance = longDelta * Normalizator;
 		shortPipDistance = shortDelta * Normalizator;
 		if (longPipDistance > PipsPerStep) {
-			if (AggresiveHedge == true) {lots = lots_Short;}
+			if (AggresiveHedge == 1) {lots = orders_Short * InitialLots;}
+			if (AggresiveHedge == 2) {lots = lots_Short;}
 			check = CreatePendingOrders(LONG, OP_BUY, Ask, lots, 0, 0, ""); 
 		}
 		if (shortPipDistance > PipsPerStep) {
-			if (AggresiveHedge == true) {lots = lots_Long;}
+			if (AggresiveHedge == 1) {lots = orders_Long * InitialLots;}
+			if (AggresiveHedge == 2) {lots = lots_Long;}
 			check = CreatePendingOrders(SHORT, OP_SELL, Bid, lots, 0, 0, "");
 		}
 	}
@@ -138,7 +143,8 @@ int start() {
 			"\nLowest short:" + order_minimal +
 			"\nDelta short:" + shortDelta +
 			"\nTotal profit:" + DoubleToStr(totalPL, 2) +
-			"\nTotal Swap:" + DoubleToStr(totalSwap, 2);
+			"\nTotal Swap:" + DoubleToStr(totalSwap, 2) +
+			"\n-----\nPoint size: " + Point;
 		Comment (info);
 		//Print (info);
 	}
@@ -323,9 +329,12 @@ bool CreatePendingOrders(int dir, int pendingType, double entryPrice, double vol
 				else { tp = 0; }
                 
 				if (LogMessages == true) {
-					info = "Type: " + pendingType + ", \nentryPrice: " + DoubleToStr(entryPrice, Digits) + ", \nAsk " + DoubleToStr(Ask,Digits)
-					+ ", \nLots " + DoubleToStr(lots, 2) + " , \nStop: " + DoubleToStr(sl, Digits)  
-					+ ", \nTP: " + DoubleToStr(tp, Digits);
+					info = "Type: " + pendingType + 
+					",\nentryPrice: " + DoubleToStr(entryPrice, Digits) + 
+					",\nAsk " + DoubleToStr(Ask,Digits) +
+					",\nLots " + DoubleToStr(lots, 2) + 
+					",\nStop: " + DoubleToStr(sl, Digits) +
+					",\nTP: " + DoubleToStr(tp, Digits);
 					Print(info);
 					Comment(info);
 				}
@@ -340,9 +349,12 @@ bool CreatePendingOrders(int dir, int pendingType, double entryPrice, double vol
 				else { tp = 0; }
 
 				if (LogMessages == true) {
-					info = "Type: " + pendingType + ", \nentryPrice: " + DoubleToStr(entryPrice, Digits) + ", \nBid " + DoubleToStr(Bid,Digits)
-					+ ", \nLots " + DoubleToStr(lots, 2) + " , \nStop: " + DoubleToStr(sl, Digits)  
-					+ ", \nTP: " + DoubleToStr(tp, Digits);
+					info = "Type: " + pendingType + 
+					",\nentryPrice: " + DoubleToStr(entryPrice, Digits) +
+					",\nBid " + DoubleToStr(Bid,Digits) +
+					",\nLots " + DoubleToStr(lots, 2) +
+					",\nStop: " + DoubleToStr(sl, Digits) +
+					",\nTP: " + DoubleToStr(tp, Digits);
 					Print(info);
 					Comment(info);
 				}
@@ -352,7 +364,7 @@ bool CreatePendingOrders(int dir, int pendingType, double entryPrice, double vol
 		}
            
 		if( retVal > 0 ) { return( true ); }
-			else {
+			else { // Something nasty happened. Warn the user.
 				Print("CreatePendingOrders: error \'"+ErrorDescription(GetLastError())+"\' when setting entry order");
 				Sleep(COMMIT_DELAY);      
 			}
