@@ -36,7 +36,7 @@
 #define		ALL			0
 
 // Globals
-extern   bool	CloseAfterSuccess	=  true;	// Remove the EA from the chart after successfull profit is taken.
+extern   bool	CloseAfterSuccess	=  false;	// Remove the EA from the chart after successfull profit is taken.
 extern   bool	GrabAndRun		=  true;	// If All open positions profit is bigger than GrabAndRunTarget - close all.
 extern   int	AggresiveHedge		=  1;		// Will hedge the opposite ammount of lots minus the already open lots.
 							// Aggresive = 0: Will always use the initial lot size to hedge the opposite positions
@@ -44,9 +44,9 @@ extern   int	AggresiveHedge		=  1;		// Will hedge the opposite ammount of lots m
 							// Aggresive = 2: If you have 6 longs sized total 3 lots and 1 short worth 0.10 lots
 							// this will open next short order the size of 3 lots to cover the longs
 extern   int	MagicNumber		=  4400;	// Pazardjik's postal code in Bulgaria :P
-extern   double	GrabAndRunTarget	=  0.5; 	// In base account currency. Can be a fraction like 0.3 (e.g. 30 EURO cents)
+extern   double	GrabAndRunTarget	=  5.0; 	// In base account currency. Can be a fraction like 0.3 (e.g. 30 EURO cents)
 extern   double	InitialLots		=  0.01;	// This will be multiplied by the aggresive hedging alogrithm if necessary
-extern   int	PipsPerStep		=  12;		// This will establish the distance between each step in PIPs.
+extern   int	PipsPerStep		=  50;		// This will establish the distance between each step in PIPs.
 extern   double	DailyTarget		=  100;		// Stop trading if reached. EUR 100 per day is quite good achievement for now.
 
 extern   bool	LogMessages		=  true;
